@@ -1,0 +1,30 @@
+#!/bin/sh
+
+#
+# jupyter tool
+#
+# Some notes:
+# example.ipynb or a list of notebooks - Ask UCSD 
+# anaconda-7 base anaconda environment
+
+scriptDir=$(readlink -f $(dirname $0)) 
+
+noteBookName=welcome.ipynb
+if [ -n "${SESSIONDIR}" ] ; then
+   if [ -d ${SESSIONDIR} ] ; then
+      oldCWD=${PWD}
+      cd ${SESSIONDIR}
+
+      noteBookName=$(python ${scriptDir}/setupNotebook.py)
+#     echo "noteBookName = ${noteBookName}"
+
+      cd ${oldCWD}
+   fi
+fi
+
+/usr/bin/invoke_app "$@" -t solidearth \
+                         -C "start_jupyterlab -T @tool/bin \"${noteBookName}\"" \
+                         -u anaconda-7 \
+                         -e CONDA_PREFIX=/apps/share64/debian10/anaconda/anaconda-7/envs/fall2022 \
+                         -r none \
+                         -w headless
