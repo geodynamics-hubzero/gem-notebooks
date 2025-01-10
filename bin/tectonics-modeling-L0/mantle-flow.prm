@@ -4,7 +4,7 @@
 # output directory which stores the simulation results.
 set Dimension                              = 2
 set Use years in output instead of seconds = true
-set End time                               = 3e10
+set End time                               = 5e10
 set Output directory                       = output-mantle-flow
 
 
@@ -66,7 +66,7 @@ subsection Material model
     set Thermal expansion coefficient = 2e-5
 
     # The value of the viscosity $\eta$. Units: $kg/m/s$ or $Pa s$.
-    set Viscosity = 5.10452e24
+    set Viscosity = 2.5e24
   end
 end
 
@@ -127,7 +127,8 @@ subsection Postprocess
   set List of postprocessors = velocity statistics, temperature statistics, heat flux statistics, visualization, basic statistics
   subsection Visualization
     set Time between graphical output = 1e7
-    set Output format = gnuplot
+   # set Output format = gnuplot
+    set Output format                 = hdf5
     set List of output variables = material properties
   end
 end
