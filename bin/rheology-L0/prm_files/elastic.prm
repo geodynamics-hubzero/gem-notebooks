@@ -1,0 +1,158 @@
+# Model to demonstrate elastic bending of a slab surrounded by 
+# a viscous material. Initially, gravity is switched on to
+# pull the slab down. After 10,000 years, gravity is switched
+# off, and the slab should elastically rebound to its original shape.
+
+# Global parameters
+set Dimension                              = 2
+set Start time                             = 0
+set End time                               = 1e4
+set Use years in output instead of seconds = true
+set Resume computation                     = false
+set CFL number                             = 0.1
+set Maximum time step                      = 1e3
+set Use operator splitting                 = true
+set Output directory                       = elastic_deformation
+set Pressure normalization                 = no
+set Nonlinear solver scheme                = iterated Advection and Stokes
+
+
+subsection Solver parameters
+  subsection Operator splitting parameters
+    set Reaction time step                     = 1e3
+    set Reaction solver type                   = fixed step
+  end
+end
+
+
+subsection Geometry model
+  set Model name = box
+
+  subsection Box
+    set X repetitions = 2
+    set Y repetitions = 8
+    set X extent      = 50e3
+    set Y extent      = 200e3
+  end
+end
+
+subsection Mesh refinement
+  set Initial adaptive refinement        = 0
+  set Initial global refinement          = 4
+  set Time steps between mesh refinement = 0
+  set Strategy                           = composition threshold
+  set Run postprocessors on initial refinement = false
+
+  subsection Composition threshold
+    set Compositional field thresholds = 1e6, 1e6, 1e6, 1e6, 1e6, 1e6, 0.2
+  end
+end
+
+
+subsection Discretization
+  set Composition polynomial degree           = 2
+  set Temperature polynomial degree           = 1
+  set Use discontinuous temperature discretization = false
+  set Use discontinuous composition discretization = true
+  subsection Stabilization parameters
+      set Use limiter for discontinuous composition solution = true
+      set Global composition maximum =  1.e11,  1.e11,  1.e11, 1.e11,  1.e11,  1.e11, 1.0
+      set Global composition minimum = -1.e11, -1.e11, -1.e11,-1.e11, -1.e11, -1.e11, 0.0
+  end
+end
+
+subsection Formulation
+  set Enable elasticity = true
+end
+
+
+subsection Boundary velocity model
+  set Tangential velocity boundary indicators = bottom, top, left
+  set Zero velocity boundary indicators = right
+end
+
+
+subsection Compositional fields
+  set Number of fields = 7
+  set Names of fields  = ve_stress_xx, ve_stress_yy, ve_stress_xy, ve_stress_xx_old, ve_stress_yy_old, ve_stress_xy_old, slab
+end
+
+
+subsection Initial composition model
+  set Model name = function
+  subsection Function
+    set Variable names      = x,y
+    set Function constants  = x0=15e3,  
+    set Function expression = 0; 0; 0; 0; 0; 0; if ( y>50e3 && y<150e3,  0.5+0.5*tanh((x-x0)/1000), 0 )
+  end
+end
+
+subsection Boundary composition model
+  set Fixed composition boundary indicators  = bottom, top, left, right
+  set List of model names                   = initial composition
+end
+
+# Temperature boundary conditions
+subsection Boundary temperature model
+  set Fixed temperature boundary indicators = bottom, top, left, right
+  set List of model names = box
+  subsection Box
+    set Bottom temperature = 293
+    set Left temperature   = 293
+    set Right temperature  = 293
+    set Top temperature    = 293
+  end
+end
+
+# Temperature initial conditions
+subsection Initial temperature model
+  set Model name = function
+  subsection Function
+    set Function expression = 293
+  end
+end
+
+# Material model
+subsection Material model
+  set Model name = viscoelastic
+
+  subsection Viscoelastic
+    set Densities            = 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3400
+    set Viscosities          = 1.e19, 1.e19, 1.e19, 1.e19, 1.e19, 1.e19, 1.e19, 1.e21
+    set Elastic shear moduli = 1.e14, 1.e14, 1.e14, 1.e14, 1.e14, 1.e14, 1.e14, 80.e7
+    set Fixed elastic time step     = 1e2
+    set Use fixed elastic time step = true
+    set Viscosity averaging scheme  =  arithmetic
+    set Thermal expansivities = 0
+  end
+end
+
+subsection Gravity model
+  set Model name = function
+  subsection Function
+    set Variable names = x,y,t
+    set Coordinate system = depth
+    set Function expression = 0; if (t < 8e3, -10, 0)
+  end
+end
+
+subsection Postprocess
+  set List of postprocessors = velocity statistics, basic statistics, temperature statistics, visualization, topography
+  subsection Visualization
+    set List of output variables = material properties, strain rate, nonadiabatic pressure, surface elevation
+
+    subsection Material properties
+      set List of material properties = density, viscosity
+    end
+
+    set Time between graphical output = 4e2
+    set Interpolate output = true
+  end
+
+end
+
+subsection Termination criteria
+  set Termination criteria = end step
+  set End step = 500
+  set Checkpoint on termination = true
+end
